@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday 🎉</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    height: 100vh;
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    overflow: hidden;
+}
+
+.container {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 30px 20px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+h1 {
+    color: white;
+    margin-bottom: 15px;
+}
+
+p {
+    color: white;
+    margin-bottom: 20px;
+}
+
+/* Cake */
+.cake {
+    position: relative;
+    width: 150px;
+    height: 120px;
+    margin: 0 auto 20px;
+}
+
+.layer {
+    position: absolute;
+    width: 150px;
+    height: 40px;
+    border-radius: 10px;
+}
+
+.layer-bottom { bottom: 0; background: #ff85a1; }
+.layer-middle { bottom: 40px; background: #ff7096; }
+.layer-top { bottom: 80px; background: #ff477e; }
+
+.candle {
+    position: absolute;
+    width: 10px;
+    height: 30px;
+    background: white;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 3px;
+}
+
+.flame {
+    position: absolute;
+    width: 15px;
+    height: 20px;
+    background: orange;
+    border-radius: 50%;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: flicker 0.2s infinite alternate;
+}
+
+@keyframes flicker {
+    from { transform: translateX(-50%) scale(1); opacity: 1; }
+    to { transform: translateX(-50%) scale(1.2); opacity: 0.7; }
+}
+
+.hidden { display: none; }
+
+/* Popup */
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 300px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: 0.4s ease;
+    z-index: 10;
+}
+
+.popup.show {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.popup h2 {
+    color: #ff4081;
+}
+
+.popup button {
+    margin-top: 15px;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 20px;
+    background: #ff4081;
+    color: white;
+    cursor: pointer;
+}
+
+/* Confetti */
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="confetti"></canvas>
+
+<div class="container">
+    <h1>🎂 Happy Birthday babbyyy!!!</h1>
+
+    <div class="cake">
+        <div class="layer layer-bottom"></div>
+        <div class="layer layer-middle"></div>
+        <div class="layer layer-top"></div>
+        <div class="candle">
+            <div class="flame" id="flame"></div>
+        </div>
+    </div>
+
+    <p>Blow into your mic to blow out the candle 🎤💨</p>
+</div>
+
+<div class="popup" id="popup">
+    <h2>🎉 Surprise! 🎉</h2>
+    <p style="color: red;">May your year be filled with joy, success, and unforgettable memories!I hope i made your year a little better.mwaahhh!!<3 💖</p>
+    <button onclick="closePopup()">Close</button>
+</div>
+
+<script>
+const flame = document.getElementById("flame");
+const popup = document.getElementById("popup");
+
+/* Microphone Blow Detection */
+async function setupMic() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const microphone = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    microphone.connect(analyser);
+
+    analyser.fftSize = 256;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function detectBlow() {
+        analyser.getByteFrequencyData(dataArray);
+        let volume = dataArray.reduce((a,b) => a+b) / dataArray.length;
+
+        if (volume > 60) { // Sensitivity threshold
+            blowCandle();
+        }
+
+        requestAnimationFrame(detectBlow);
+    }
+
+    detectBlow();
+}
+
+function blowCandle() {
+    if (!flame.classList.contains("hidden")) {
+        flame.classList.add("hidden");
+        startConfetti();
+        setTimeout(() => popup.classList.add("show"), 800);
+    }
+}
+
+setupMic();
+
+/* Confetti */
+const canvas = document.getElementById('confetti');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let confetti = [];
+
+function randomColor() {
+    const colors = ['#ff0a54','#ff477e','#ff85a1','#a0c4ff','#bdb2ff','#caffbf'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function createConfetti() {
+    for (let i = 0; i < 200; i++) {
+        confetti.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            r: Math.random() * 6 + 4,
+            color: randomColor(),
+            speed: Math.random() * 3 + 2
+        });
+    }
+}
+
+function drawConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confetti.forEach(c => {
+        ctx.fillStyle = c.color;
+        ctx.fillRect(c.x, c.y, c.r, c.r);
+        c.y += c.speed;
+    });
+}
+
+function startConfetti() {
+    createConfetti();
+    setInterval(drawConfetti, 20);
+}
+
+function closePopup() {
+    popup.classList.remove("show");
+}
+</script>
+
+</body>
+</html>
